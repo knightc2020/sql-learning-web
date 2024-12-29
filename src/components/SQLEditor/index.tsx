@@ -14,14 +14,17 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({ onExecute }) => {
   useEffect(() => {
     if (editorParentRef.current && !editorRef.current) {
       const state = EditorState.create({
-        doc: 'SELECT 1 as result',
+        doc: 'SELECT * FROM transaction_history',
         extensions: [
           basicSetup,
           sql(),
           EditorView.theme({
-            '&': { height: '100%' },
+            '&': { height: '300px' },
             '.cm-scroller': { overflow: 'auto' },
             '.cm-content, .cm-gutter': { minHeight: '100%' },
+            '.cm-gutters': { backgroundColor: '#f8fafc', borderRight: '1px solid #e2e8f0' },
+            '.cm-activeLineGutter': { backgroundColor: '#f1f5f9' },
+            '.cm-line': { padding: '0 4px' },
           }),
         ],
       });
@@ -45,17 +48,19 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({ onExecute }) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center p-4 bg-white border-b">
-        <h3 className="text-lg font-semibold text-gray-800">SQL 编辑器</h3>
+    <div className="flex flex-col">
+      <div className="bg-gray-50 border-b border-gray-200 p-4">
         <button
           onClick={handleExecute}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
         >
-          执行查询
+          <svg className="w-4 h-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+          </svg>
+          运行查询
         </button>
       </div>
-      <div className="flex-1 overflow-hidden p-4 bg-white" ref={editorParentRef} />
+      <div className="flex-1 bg-white" ref={editorParentRef} />
     </div>
   );
 };
