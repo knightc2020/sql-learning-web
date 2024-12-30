@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@codemirror/lang-sql": "^6.5.4",
+    "@codemirror/language": "^6.10.8",
     "@codemirror/state": "^6.0.0",
+    "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
@@ -30,4 +32,4 @@
     "eslint": "^8.0.0",
     "eslint-config-next": "14.0.4"
   }
-} 
+}

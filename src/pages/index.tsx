@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import SQLEditor from '../components/SQLEditor';
 import ResultPanel from '../components/ResultPanel';
+import { EditorView } from 'codemirror';
 
 // 课程内容类型定义
 interface CourseContent {
@@ -32,13 +33,13 @@ const courseContents: { [key: string]: CourseContent } = {
     examples: [
       {
         title: '查看表结构',
-        description: '查看客户信息表的结构：',
-        sql: 'SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH\nFROM INFORMATION_SCHEMA.COLUMNS\nWHERE TABLE_NAME = \'customers\';'
+        description: '查看客户信息表的内容结构：',
+        sql: 'SELECT * FROM customers LIMIT 1;'
       },
       {
         title: '查看主键信息',
-        description: '查看客户表的主键信息：',
-        sql: 'SELECT KCU.COLUMN_NAME\nFROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS TC\nJOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU\nON TC.CONSTRAINT_NAME = KCU.CONSTRAINT_NAME\nWHERE TC.TABLE_NAME = \'customers\'\nAND TC.CONSTRAINT_TYPE = \'PRIMARY KEY\';'
+        description: '查看客户表中的主键字段：',
+        sql: 'SELECT customer_id FROM customers LIMIT 1;'
       }
     ]
   },
@@ -299,6 +300,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [currentSection, setCurrentSection] = useState('db-basics');
   const [expandedSections, setExpandedSections] = useState<string[]>(['section-1']);
+  const editorRef = useRef<EditorView>();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -368,6 +370,23 @@ export default function Home() {
       setColumns([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEditorMount = (editor: EditorView) => {
+    editorRef.current = editor;
+  };
+
+  const copyToEditor = (sql: string) => {
+    if (editorRef.current) {
+      const transaction = editorRef.current.state.update({
+        changes: {
+          from: 0,
+          to: editorRef.current.state.doc.length,
+          insert: sql
+        }
+      });
+      editorRef.current.dispatch(transaction);
     }
   };
 
@@ -595,7 +614,7 @@ export default function Home() {
         {/* 主要内容区 */}
         <div className="flex-1 ml-8">
           {/* 课程内容展示区 */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-4">
             <h2 className="text-xl font-bold text-gray-900">{courseContents[currentSection].title}</h2>
             <div className="mt-4">
               <div className="prose max-w-none">
@@ -603,7 +622,7 @@ export default function Home() {
                   {courseContents[currentSection].description}
                 </p>
                 {courseContents[currentSection].content && (
-                  <div className="bg-gray-50 p-4 rounded-md mb-6">
+                  <div className="bg-gray-50 p-4 rounded-md mb-4">
                     <h3 className="text-lg font-semibold text-gray-800 mb-3">知识要点</h3>
                     <ul className="space-y-2">
                       {courseContents[currentSection].content.map((item, index) => (
@@ -614,16 +633,16 @@ export default function Home() {
                 )}
               </div>
               
-              <div className="mt-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">练习示例</h4>
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3">练习示例</h4>
                 {courseContents[currentSection].examples.map((example, index) => (
-                  <div key={index} className="bg-gray-50 p-4 rounded-md mb-4">
+                  <div key={index} className="bg-gray-50 p-4 rounded-md mb-3">
                     <h5 className="font-medium text-gray-900 mb-2">{example.title}</h5>
                     <p className="text-sm text-gray-600 mb-2">{example.description}</p>
-                    <pre className="bg-gray-800 text-white p-4 rounded-md text-sm overflow-x-auto">
+                    <pre className="bg-gray-800 text-white p-3 rounded-md text-sm overflow-x-auto">
                       <code>{example.sql}</code>
                     </pre>
-                    <div className="mt-3 flex space-x-3">
+                    <div className="mt-2 flex space-x-3">
                       <button 
                         onClick={() => handleRunExample(example.sql)}
                         className="px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors"
@@ -631,12 +650,7 @@ export default function Home() {
                         运行示例
                       </button>
                       <button 
-                        onClick={() => {
-                          const editor = document.querySelector('textarea');
-                          if (editor) {
-                            editor.value = example.sql;
-                          }
-                        }}
+                        onClick={() => copyToEditor(example.sql)}
                         className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors"
                       >
                         复制到编辑器
@@ -648,11 +662,11 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 mb-3">
             <h2 className="text-xl font-bold text-gray-900">SQL编辑器</h2>
             <p className="mt-2 text-gray-600">在这里编写和执行SQL查询语句</p>
             
-            <div className="mt-4 space-x-4">
+            <div className="mt-3 space-x-4">
               <button className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md">
                 查看客户表
               </button>
@@ -662,7 +676,7 @@ export default function Home() {
             </div>
 
             {error && (
-              <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
+              <div className="mt-3 p-3 bg-red-50 border-l-4 border-red-500 rounded-md">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -677,11 +691,11 @@ export default function Home() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-2">
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <SQLEditor onExecute={handleExecuteQuery} />
+              <SQLEditor onExecute={handleExecuteQuery} onEditorMount={handleEditorMount} />
             </div>
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden mt-2">
               <ResultPanel
                 data={queryResult}
                 columns={columns}
